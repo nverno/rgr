@@ -13,7 +13,7 @@ plot (separately by time period as well).
 Issues
 ------
 
-* rGR for hazards is still correlated in two plots
+* rGR for hazards is still correlated in some plots (see ./test)
 
 Dependencies
 ------------
