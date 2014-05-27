@@ -1,6 +1,8 @@
-## Functions to fit rgr for hazard analysis
-## Goal: to have as little correlation as possible between rgr and LRS for
-##  hazard models
+## These functions are used to fit rGR for hazard analysis:
+## The primary goal was to have final rGR values uncorrelated with LRS for use in
+##  hazard modelling.
+
+## Library dependencies
 library(splines)
 library(segmented)
 
@@ -10,14 +12,15 @@ library(segmented)
 ##
 
 ## Function to select model to calculate rgr.  Goal is to find a well suited
-##  model that also predicts bole volume growth that is not correlated to LRS
+##  model that also predicts bole volume growth that is not correlated to observed
+##  bole volume at the end of the prediction period
 ## Model selection:
 ## - Choose best model by RMSE
 ## - If best model significantly correlated to bv at end of period, try next best
 ## - Possible models: linear, power, polynomials, segmented linear
 removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
                        depen = "bvgrowth", indep = "priorbv", indep2 = "bv",
-                       degree = 9, debug = FALSE, scottLRS = TRUE,
+                       degree = 9, debug = FALSE, scottLRS = FALSE,
                        rgrLimits = c(0,10)) {
     if (length(models) < 1) stop("Must specify models: lin, pow, poly, seg, etc.")
     dep <- dat[,depen]
