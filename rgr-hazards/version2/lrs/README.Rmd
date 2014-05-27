@@ -56,6 +56,9 @@ tst$lrs <- scottLRS(prior=tst$priorbv, current=tst$bv, model="linear")
 library(ggplot2)
 fit <- lm( (tst$bv-tst$priorbv) ~ tst$priorbv )
 tst$preds <- fit$fitted.values
+## Correlation
+corr <- cor((tst$preds-tst$bv), tst$priorbv)
+corr
 plot(tst$priorbv, tst$priorbv + tst$preds, col = "dark blue", xlab = "prior bv", ylab= "bv",
      main = "Scott LRS with linear prediction")
 points(tst$priorbv, tst$bv, col = "orange")
@@ -63,6 +66,7 @@ legend("topleft", legend=c("predicted for LRS","observed"),
        pch = 1, col = c("dark blue", "orange"))
 
 ```
+
 
 ## Power fit for predicted bole volume growth
 ```{r fig2}

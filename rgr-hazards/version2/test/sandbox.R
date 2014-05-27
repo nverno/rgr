@@ -39,7 +39,11 @@ fitSplines <- function(ind, ind2, dep, degree=9, corr=0.05, intrcpt=FALSE,
         if (debug==TRUE)
             print(paste("Fitting degree",i))
         fit <- NULL
-        try(fit <- lm(dep ~ bs(ind, degree = i)), silent=TRUE)
+        if (intrcpt) { # fit without intercept
+            try(fit <- lm(dep ~ bs(ind, degree = i) + 0), silent=TRUE)
+        } else {
+            try(fit <- lm(dep ~ bs(ind, degree = i)), silent=TRUE)
+        }
         if (!is.null(fit)) { ## Successful fit, check significance of coefs
             summ <- summary(fit)$coefficients[,4]
             nonSig <- length(summ[summ > corr])
@@ -86,7 +90,13 @@ bestSpline <- function(fits, ind2, dep, corr=0.05) {
 ## Sandbox
 
 ## with info
-fitSplines(ind, ind2, dep, degree = 2, info=TRUE, debug = TRUE, corr = 0.05)
+fitSplines(ind, ind2, dep, degree = 3, info=TRUE, debug = TRUE, corr = 0.05)
 
 ## w/o info
 fitSplines(ind, ind2, dep, degree = 2, info=FALSE, debug = TRUE, corr = 0.05)
+
+
+## correlation between residuals and priorbv
+fit <- lm((tst$bv - tst$priorbv) ~ tst$priorbv)
+plot()
+preds <- predict(fit, data.frame())

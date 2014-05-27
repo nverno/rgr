@@ -1,8 +1,8 @@
 ## Compute Scotts's version of LRS
 * Formula:
-$LRS = \frac{prior + predicted}{max(current)}$
+$LRS = \frac{prior + predicted_growth}{max(current)}$
 
-where $prior$ is the prior size, $predicted = a * prior + b$, and $current$ is the size at the end of the period.
+where $prior$ is the prior size, $predicted_growth = a * (current-prior) + b$, and $current$ is the size at the end of the period.
 
 ## Questions:
 * Was the predicted fit just a linear fit?
@@ -60,6 +60,16 @@ tst$lrs <- scottLRS(prior = tst$priorbv, current = tst$bv, model = "linear")
 library(ggplot2)
 fit <- lm((tst$bv - tst$priorbv) ~ tst$priorbv)
 tst$preds <- fit$fitted.values
+## Correlation
+corr <- cor((tst$preds - tst$bv), tst$priorbv)
+corr
+```
+
+```
+## [1] -0.985
+```
+
+```r
 plot(tst$priorbv, tst$priorbv + tst$preds, col = "dark blue", xlab = "prior bv", 
     ylab = "bv", main = "Scott LRS with linear prediction")
 points(tst$priorbv, tst$bv, col = "orange")
@@ -68,6 +78,7 @@ legend("topleft", legend = c("predicted for LRS", "observed"), pch = 1, col = c(
 ```
 
 ![plot of chunk fig1](figure/fig1.png) 
+
 
 
 ## Power fit for predicted bole volume growth
