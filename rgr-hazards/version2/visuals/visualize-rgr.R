@@ -14,9 +14,10 @@ dat <- read.csv("~/work/data/data/hazards/hazards-bc-firs.csv")
 combs <- unique(dat[c("install","plot","time")]) # unique combos of install/plot/time
 
 ## Example: returns fit object
-#tst <- dat[dat$install == 1 & dat$plot == 10 & dat$time == 85,]
+tst <- dat[dat$install == 1 & dat$plot == 10 & dat$time == 85,]
 fitSplines(ind=tst$priorbv, ind2=tst$bv, dep=tst$bvgrowth)
 
+degree <- 3
 printout <- FALSE
 null.subs <- c() # track empty subsets
 for (i in 1:nrow(combs)) {
@@ -31,11 +32,11 @@ for (i in 1:nrow(combs)) {
         next;
     }
     ## Get the model
-    mod <- fitSplines(ind=x$priorbv, ind2=x$bv, dep=x$bvgrowth)[[1]]
+    mod <- fitSplines(ind=x$priorbv, ind2=x$bv, dep=x$bvgrowth, degree=degree)[[1]]
     deg <- length(coef(mod))
     preds <- predict(mod)
     res <- residuals(mod)
-    stopifnot(deg == unique(x$degree))
+    ## stopifnot(deg == unique(x$degree))
 
     ## Get the correlation between predicted and bv
     corr <- cor(x$bv, res)
@@ -74,3 +75,4 @@ for (i in 1:nrow(combs)) {
     ## if (printout == TRUE)
     ##     dev.off()
 }
+

@@ -32,3 +32,14 @@ bclong[bclong$time != 73,]$lrs <- lrs$lrs
 
 ## write data
 write.csv(bclong, "~/work/data/data/long-bc-derived.csv", row.names=FALSE)
+
+
+## bclong$lrs2 <- rep(NA, nrow(bclong))
+## lrsvals2 <- ddply(dat[dat$time != 73, ], .(install, plot, time), function(x) {
+##     data.frame(id = x$id, lrs2 = x$bv/max(x$bv))
+## })
+
+## ## add lrs2 values
+## lrs2 <- lrsvals2[order(lrsvals2$install, lrsvals2$plot, lrsvals2$time, lrsvals2$id),]
+## dat <- dat[order(dat$install, dat$plot, dat$time, dat$id),]
+## dat$lrs2 <- lrs2$lrs2

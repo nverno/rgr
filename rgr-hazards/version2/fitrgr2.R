@@ -6,6 +6,7 @@
 ##  for hazard analysis (~/work/hazards/addColumn/lrs.R)
 ## source("~/work/functions/functions.R")
 source("~/work/rgr/rgr-hazards/version2/functions.R")
+require(plyr)
 
 ## data - use long-bc-derived, all species included
 bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
@@ -28,7 +29,7 @@ rgr <- ddply(bclong, .(install, plot, time), .fun = function(x) {
     x <- droplevels(x)
     maxSize <- max(x$bv)
     print(paste(unique(x$install),unique(x$plot), unique(x$time)))
-    rgrs <- removeCorr(x)
+    rgrs <- removeCorr(x, degree = 3)
     if (unique(rgrs$corr < 0.05)) # report correlated plot
         corrplots <<- rbind(data.frame(install = unique(x$install), plot = unique(x$plot),
                                        time = unique(x$time)),corrplots)
