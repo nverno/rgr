@@ -1,0 +1,97 @@
+Compare some methods to remove intercept from models
+========================================================
+
+
+These are possible methods to remove the intercept from models fitting bole volume growth to prior bole volume:
+* Recenter data around zero
+* Fit linear/polynomial/B-spline models and explicitly specify no intercept
+
+Data was centered by subtracting the means.
+
+
+```{r, echo=FALSE}
+library(splines)
+
+## test data
+inst <- 1
+plt <- 10
+tm <- 85
+
+## data: show for install 1 plot 10 time 76
+bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
+
+## Test data, only look at ALIVE firs that grew
+bclong <- subset(bclong1, spec == "FD" & stat == "ALIVE" & bvgrowth>=0) ## not sure how to treat trees
+tst <- bclong[bclong$install == inst & bclong$plot == plt & bclong$time == tm,]
+```
+
+Test data from install `inst`, plot `plt`, and year `tm`.
+
+
+```{r fits}
+ind <- tst[,"bv"]
+dep <- tst[,"bvgrowth"]
+
+## Centered data
+indCent <- ind - mean(ind)
+depCent <- dep - mean(dep)
+
+## Poly fits
+fit1 <- lm(depCent ~ poly(indCent, degree = 3))
+fit2 <- lm(depCent ~ poly(indCent, degree = 3) - 1)
+fit3 <- lm(dep ~ poly(ind, degree = 3))
+fit4 <- lm(dep ~ poly(ind, degree = 3) - 1)
+
+## bs fits
+fit5 <- lm(dep ~ bs(ind, degree = 3))
+fit6 <- lm(dep ~ bs(ind, degree = 3) - 1)
+fit7 <- lm(depCent ~ bs(indCent, degree = 3))
+fit8 <- lm(depCent ~ bs(indCent, degree = 3) - 1)
+
+## linear
+fit9 <- lm(dep ~ ind)
+fit10 <- lm(depCent ~ indCent)
+fit11 <- lm(dep ~ ind - 1)
+fit12 <- lm(depCent ~ indCent - 1)
+```
+
+
+## Poly
+### centered
+```{r}
+summary(fit1)
+summary(fit2)
+```
+
+### untransformed
+```{r}
+summary(fit3)
+summary(fit4)
+```
+
+## B-spline
+### centered
+```{r}
+summary(fit7)
+summary(fit8)
+```
+
+### untransformed
+```{r}
+summary(fit5)
+summary(fit6)
+```
+
+## Linear
+### centered
+```{r}
+summary(fit10)
+summary(fit12)
+```
+
+### untransformed
+```{r}
+summary(fit9)
+summary(fit11)
+```
+

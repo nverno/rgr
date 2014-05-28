@@ -3,7 +3,7 @@ dat <- read.csv("~/work/data/data/hazards/hazards-bc-firs.csv")
 
 library(plyr)
 corrs <- ddply(dat, .(install, plot, time), function(x) {
-    cc <- cor.test(x$rg, x$LRS, alternative = "two.sided", method="pearson",)
+    cc <- cor.test(x$rgr, x$bv, alternative = "two.sided", method="pearson",)
     data.frame(pval = cc$p.value,
                statistic = cc$statistic,
                corr = cc$estimate,
@@ -14,7 +14,7 @@ corrs <- ddply(dat, .(install, plot, time), function(x) {
 
 ## Plots still correlated
 corrs <- corrs[order(corrs$corr),]
-corrs[corrs$corr < 0.05, ]
+corrs[corrs$pval < 0.05, ]
 
 
-cc <- cor.test(dat$rgr, dat$LRS)
+cc <- cor.test(dat$rgr, dat$lrs)

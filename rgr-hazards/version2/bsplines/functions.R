@@ -1,27 +1,3 @@
-################################################################################
-##
-##                                  Set-up
-##
-################################################################################
-
-## data
-bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
-
-## Test data, only look at ALIVE firs that grew
-bclong <- subset(bclong1, spec == "FD" & stat == "ALIVE" & bvgrowth>=0) ## not sure how to treat trees
-tst <- bclong[bclong$install == 1 & bclong$plot == 10 & bclong$time == 79,]
-ind <- tst[,"priorbv"]
-ind2 <- tst[,"bv"]
-dep <- tst[,"bvgrowth"]
-degree <- 9
-## dat <- tst
-
-## params
-debug <- TRUE
-corr <- 0.05
-intrcpt <- FALSE
-info <- TRUE
-
 ##########################################################################
 ##
 ##              Polynomial regression with B-splines
@@ -42,6 +18,7 @@ info <- TRUE
 ##
 ##########################################################################
 ##
+require(splines)
 fitSplines <- function(ind, ind2, dep, degree=9, corr=0.05, intrcpt=FALSE,
                        info = FALSE, debug = FALSE) {
     fits <- list() ## store all fits to do analysis at end
@@ -53,7 +30,7 @@ fitSplines <- function(ind, ind2, dep, degree=9, corr=0.05, intrcpt=FALSE,
         if (intrcpt) {              # fit with intercept
             try(fit <- lm(dep ~ bs(ind, degree = i)), silent=TRUE)
         } else {                    # fit without intercept
-            try(fit <- lm(dep ~ bs(ind, degree = i)), silent=TRUE)
+            try(fit <- lm(dep ~ bs(ind, degree = i) - 1), silent=TRUE)
         }
         if (!is.null(fit)) {        # Successful fit, check significance of coefs
             summ <- summary(fit)$coefficients[,4]
@@ -122,21 +99,3 @@ bestSpline <- function(fits, ind2, dep, corr=0.05) {
                 corrs=corrs, rmses=rmses, logLiks=logLiks, aics=aics))
 }
 
-
-################################################################################
-##
-##                                  Sandbox
-##
-################################################################################
-
-## with info
-fitSplines(ind, ind2, dep, degree = 9, info=TRUE, debug = TRUE, corr = 0.05)
-
-## w/o info
-fitSplines(ind, ind2, dep, degree = 2, info=FALSE, debug = TRUE, corr = 0.05)
-
-
-## correlation between residuals and priorbv
-fit <- lm((tst$bv - tst$priorbv) ~ tst$priorbv)
-plot()
-preds <- predict(fit, data.frame())

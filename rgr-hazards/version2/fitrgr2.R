@@ -4,8 +4,8 @@
 ##  individuals size relative to the largets tree in the plot including ALL species.
 ##  It is correctly calculated in the subsequent script that preps this output data
 ##  for hazard analysis (~/work/hazards/addColumn/lrs.R)
-source("~/work/functions/functions.R")
-source("~/work/functions/functions-rgr-hazards.R")
+## source("~/work/functions/functions.R")
+source("~/work/rgr/rgr-hazards/version2/functions.R")
 
 ## data - use long-bc-derived, all species included
 bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
@@ -44,14 +44,13 @@ rgr <- ddply(bclong, .(install, plot, time), .fun = function(x) {
 ## Check how many plots are significantly correlated
 ## nrow(subset(rgr, corr < 0.05)) ## 87, 2 plots
 
-## Store correlated plots
-write.csv(corrplots, "~/work/data/data/hazards/corrplots.csv", row.names=FALSE)
+## Store correlated plots: currently none
+## write.csv(corrplots, "~/work/data/data/hazards/corrplots.csv", row.names=FALSE)
 
 ## add rgr column to bclong and make a dataset to run hazards on
 rgr <- rgr[order(rgr$install, rgr$plot, rgr$time, rgr$id),]
 bc <- bclong[order(bclong$install, bclong$plot, bclong$time, bclong$id),]
-bc[,c("rgr","method","corr","degree","LRS")] <-
-    rgr[,c("rgr","method","corr","degree","LRS")]
+bc[,c("rgr","method","degree")] <- rgr[,c("rgr","method","degree")]
 
 ## store hazards dataset
 write.csv(bc, "~/work/data/data/hazards/hazards-bc-firs.csv", row.names=FALSE)

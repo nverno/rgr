@@ -1,14 +1,22 @@
 ## Functions to fit rgr for hazard analysis
 ## Goal: to have as little correlation as possible between rgr and LRS for
 ##  hazard models
-library(splines)
-library(segmented)
+source("~/work/rgr/rgr-hazards/version2/bsplines/functions.R")
+require(splines)
+require(segmented)
 
 ################################################################################
 ##
 ##                               rGR functions
 ##
 ################################################################################
+
+## Function to compute rGR
+## Currently it is just the residuals of fitting
+## Formerly: observed / predicted
+rgrfunc <- function(dep, mod) {
+    dep - predict(mod)
+}
 
 ## Function to select model to calculate rgr.  Goal is to find a well suited
 ##  model that also predicts bole volume growth that is not correlated to LRS
@@ -18,8 +26,8 @@ library(segmented)
 ## - Possible models: linear, power, polynomials, segmented linear
 removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
                        depen = "bvgrowth", indep = "priorbv", indep2 = "bv",
-                       degree = 9, debug = FALSE, scottLRS = TRUE,
-                       rgrLimits = c(0,10)) {
+                       degree = 9, debug = FALSE, scottLRS = FALSE,
+                       rgrLimits = c(-100,100), intrcpt=FALSE) {
     if (length(models) < 1) stop("Must specify models: lin, pow, poly, seg, etc.")
     dep <- dat[,depen]
     ind <- dat[,indep]
@@ -29,21 +37,23 @@ removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
     removed <- c()
     while (pval < 0.05 & numTries > 0) { # While the data is correlated
         if (!"lin" %in% removed) {
-            fit.lin <- lm(dep ~ ind)
+            ifelse(intrcpt,
+               { fit.lin <- lm(dep ~ ind) },
+               { fit.lin <- lm(dep ~ ind - 1) })
             rmse.lin <- sqrt(sum(residuals(fit.lin)^2))
-            rgr.lin <- dep/predict(fit.lin)
+            rgr.lin <- rgrfunc(dep, fit.lin)
             cor.lin <- cor.test(rgr.lin, ind2)$p.value
             if (scottLRS == TRUE)
                 cor.lin <- cor.test(predictLRS(fit.lin, ind, ind2), rgr.lin)$p.value
         }
         if (!"bs" %in% removed) {
             fit.bs <- NULL
-            try(fit.bs <- fitSplines(ind, ind2, dep, degree=degree)[[1]], silent = TRUE)
-            try(fit.info <- fitSplines(ind, ind2, dep, degree=degree, info=TRUE),
+            try(fit.bs <- fitSplines(ind, ind2, dep, intrcpt=intrcpt, degree=degree)[[1]], silent = TRUE)
+            try(fit.info <- fitSplines(ind, ind2, dep, degree=degree, info=TRUE, intrcpt=intrcpt),
                 silent = TRUE)
             if (!is.null(fit.bs)) {
                 rmse.bs <- fit.info[["rmses"]][fit.info[["best"]]]
-                rgr.bs <- dep/predict(fit.bs)
+                rgr.bs <- rgrfunc(dep, fit.bs)
                 cor.bs <- cor.test(rgr.bs, ind2)$p.value
                 if (scottLRS == TRUE)
                     cor.bs <- cor.test(predictLRS(fit.bs, ind, ind2), rgr.bs)$p.value
@@ -54,7 +64,7 @@ removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
             try(fit.seg <- segmented(fit.seg, seg.Z = ~ind, psi = 2),silent = TRUE)
             if (!all(predict(fit.seg) == predict(fit.lin))) { # seg successful
                 rmse.seg <- sqrt(sum(residuals(fit.seg)^2))
-                rgr.seg <- dep/predict(fit.seg)
+                rgr.seg <- rgrfunc(dep, fit.seg)
                 cor.seg <- cor.test(rgr.seg, ind2)$p.value
                 if (scottLRS == TRUE)
                     cor.seg <- cor.test(predictLRS(fit.seg, ind, ind2), rgr.seg)$p.value
@@ -71,7 +81,7 @@ removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
             if (is.null(fit.pow)) fit.pow <- findPowerFit(dep, ind)
             if (!is.null(fit.pow)) {
                 rmse.pow <- sqrt(sum(residuals(fit.pow)^2))
-                rgr.pow <- dep/predict(fit.pow)
+                rgr.pow <- rgrfunc(dep, fit.pow)
                 cor.pow <- cor.test(rgr.pow, ind2)$p.value
             }
             if (scottLRS == TRUE)
@@ -82,7 +92,7 @@ removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
             degree <- polyn[["degree"]]
             fit.poly <- lm(as.formula(polyNoInt(degree,indep,depen)), data = dat)
             rmse.poly <- polyn[["rmse"]]
-            rgr.poly <- dep/predict(fit.poly)
+            rgr.poly <- rgrfunc(dep, fit.poly)
             cor.poly <- cor.test(rgr.poly, ind2)$p.value
             if (scottLRS == TRUE)
                 cor.poly <- cor.test(predictLRS(fit.poly, ind, ind2), rgr.poly)$p.value
@@ -117,26 +127,6 @@ removeCorr <- function(dat, models = c("lin","pow","poly","seg","bs"),
     ## Set rgr to conform to rgrLimits
     rgr[rgr > rgrLimits[2]] <- rgrLimits[2]
     rgr[rgr < rgrLimits[1]] <- rgrLimits[1]
-    data.frame(
-        rgr = rgr,
-        rmse = rep(get(paste0("rmse.", bestMOD)), length(rgr)),
-        corr = rep(get(paste0("cor.", bestMOD)), length(rgr)),
-        model = rep(bestMOD, length(rgr)),
-        degree = rep(degree, length(rgr)))
-}
-
-## helper function to predict LRS
-## takes a model, prior and current (i.e. priorbv and bv)
-## LRS = priorbv + predicted bvgrowth / max bv
-predictLRS <- function(mod, prior, current) {
-    LRS = (prior + predict(mod))/max(current)
-    return(LRS)
-}
-
-## helper function to output results to data.frame for removeCorr
-## Returns rgrs, rmse, corrs, model type, degree (0 if not polynomial)
-returnDat <- function(bestMOD) {
-    rgr = get(paste("rgr", bestMOD, sep = "."))
     data.frame(
         rgr = rgr,
         rmse = rep(get(paste0("rmse.", bestMOD)), length(rgr)),
@@ -229,75 +219,3 @@ findPowerFit <- function(depen, indep) {
     }
     return(fit)
 }
-
-## Find best fit using splines bs to get basis
-## Testing
-## ind <- tst[,"priorbv"]
-## ind2 <- tst[,"bv"]
-## dep <- tst[,"bvgrowth"]
-## degree <- 9
-## dat <- tst
-fitSplines <- function(ind, ind2, dep, degree=9, info = FALSE, debug = FALSE, corr=0.05) {
-    fits <- list() ## store all fits to do analysis at end
-    nonSig <- c() ## store number of insignificant coefs in each fit
-    for (i in 1:degree) {
-        if (debug==TRUE)
-            print(paste("Fitting degree",i))
-        fit <- NULL
-        try(fit <- lm(dep ~ bs(ind, degree = i)), silent=TRUE)
-        if (!is.null(fit)) { ## Successful fit, check significance of coefs
-            summ <- summary(fit)$coefficients[,4]
-            nonSig <- length(summ[summ > corr])
-            rmse <- sqrt(sum(residuals(fit)^2))
-            if (debug==TRUE)
-                print(paste("rmse of", rmse,", AIC:",AIC(fit)))
-            fits[i] <- list(fit)
-        }
-        if (is.null(fit)) break; ## stop fitting if one fails
-    }
-    if (info==TRUE)
-        return (bestSpline(fits, ind2, dep, corr))
-    else return (fits[bestSpline(fits, ind2, dep, corr)[["best"]]])
-}
-
-## Helper function for fitSplines
-## Takes a list of fits and returns smallest degree that is uncorrelated to bv
-## Also returns the AIC and rmse of the best one
-bestSpline <- function(fits, ind2, dep, corr=0.05) {
-    aics <- sapply(fits, AIC)
-    logLiks <- sapply(fits, logLik)
-    rmses <- sapply(fits, function(x) sqrt(sum(residuals(x)^2)/length(x$fitted)))
-    corrs <- sapply(fits, function(x) cor.test(dep/predict(x), ind2)$p.value)
-    ifelse (length(which(corrs > corr)) > 0,
-            { smallest <- min(which(corrs > corr)) },
-            { smallest <- which(corrs == max(corrs)) })
-    best <- smallest # currently the best
-    ## Test smallest against larger for significantly better models
-    if (smallest < length(fits)) {
-        others <- fits[(smallest+1):length(fits)]
-        pvals <- sapply(others, function(x) anova(fits[[smallest]], x)$Pr[2])
-        if (length(which(pvals < corr)) > 0) {
-            possible <- min(which(pvals < corr)) + smallest
-            if (corrs[possible] > corr) ## better model must also be uncorrelated
-                best <- possible  ## update best fit
-        }
-    }
-    return(list(best=best, smallest=smallest, degrees=c(1:length(fits)),
-                corrs=corrs, rmses=rmses, logLiks=logLiks, aics=aics))
-}
-
-## dat <- tst
-## indep <- "priorbv"
-## depen <- "bvgrowth"
-
-## ## Testing
-## x <- lm(bvgrowth ~ poly(priorbv, 11), data = tst)
-## plot(tst$priorbv, residuals(x))
-## rgr <- tst$bvgrowth/predict(x)
-## cor.test(tst$bvgrowth, rgr)
-
-
-## library(polynom)
-## plot(poly.calc(1:13))
-## plot(tst$priorbv, tst$bvgrowth)
-## curve(tst$bvgrowth~ poly(x, 13), add=TRUE)
