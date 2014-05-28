@@ -4,10 +4,11 @@
 library(splines)
 library(segmented)
 
-######################################################################################
+################################################################################
 ##
-## rGR functions
+##                               rGR functions
 ##
+################################################################################
 
 ## Function to select model to calculate rgr.  Goal is to find a well suited
 ##  model that also predicts bole volume growth that is not correlated to LRS

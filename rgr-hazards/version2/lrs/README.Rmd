@@ -4,6 +4,10 @@ $LRS = \frac{prior + predicted_growth}{max(current)}$
 
 where $prior$ is the prior size, $predicted_growth = a * (current-prior) + b$, and $current$ is the size at the end of the period.
 
+## Todo:
+* Original formulation used 3 yr periods prior to hazard periods to calculate LRS.  There is one period that needs to be interpolated.
+* Choose a criteria for using linear/nonlinear prediction
+
 ## Questions:
 * Was the predicted fit just a linear fit?
 

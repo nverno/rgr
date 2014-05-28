@@ -1,4 +1,8 @@
-
+################################################################################
+##
+##                                  Set-up
+##
+################################################################################
 
 ## data
 bclong1 <- read.csv("~/work/data/data/long-bc-derived.csv")
@@ -12,6 +16,11 @@ dep <- tst[,"bvgrowth"]
 degree <- 9
 ## dat <- tst
 
+## params
+debug <- TRUE
+corr <- 0.05
+intrcpt <- FALSE
+info <- TRUE
 
 ##########################################################################
 ##
@@ -28,7 +37,7 @@ degree <- 9
 ## - info: If true, returns the following fitting information:
 ##     * best: degree of best fitting polynomial
 ##     * smallest:
-## - debug:
+## - debug: print debugging info
 ##########################################################################
 ##
 fitSplines <- function(ind, ind2, dep, degree=9, corr=0.05, intrcpt=FALSE,
@@ -87,7 +96,11 @@ bestSpline <- function(fits, ind2, dep, corr=0.05) {
 }
 
 
-## Sandbox
+################################################################################
+##
+##                                  Sandbox
+##
+################################################################################
 
 ## with info
 fitSplines(ind, ind2, dep, degree = 3, info=TRUE, debug = TRUE, corr = 0.05)
